@@ -1,0 +1,11 @@
+/Users/akan/Desktop/demo/com.bosch.lite.sdv.vehfeature/src/main/java/com/bosch/lite/sdv/vehfeature/bean/Headers.java
+/Users/akan/Desktop/demo/com.bosch.lite.sdv.vehfeature/src/main/java/com/bosch/lite/sdv/vehfeature/VehfeatureApplication.java
+/Users/akan/Desktop/demo/com.bosch.lite.sdv.vehfeature/src/main/java/com/bosch/lite/sdv/vehfeature/bean/Payload.java
+/Users/akan/Desktop/demo/com.bosch.lite.sdv.vehfeature/src/main/java/com/bosch/lite/sdv/vehfeature/bean/Value.java
+/Users/akan/Desktop/demo/com.bosch.lite.sdv.vehfeature/src/main/java/com/bosch/lite/sdv/vehfeature/config/ShutdownConfig.java
+/Users/akan/Desktop/demo/com.bosch.lite.sdv.vehfeature/src/main/java/com/bosch/lite/sdv/vehfeature/websocket/SocketHandler.java
+/Users/akan/Desktop/demo/com.bosch.lite.sdv.vehfeature/src/main/java/com/bosch/lite/sdv/vehfeature/websocket/WebSocketConfig.java
+/Users/akan/Desktop/demo/com.bosch.lite.sdv.vehfeature/src/main/java/com/bosch/lite/sdv/vehfeature/bean/Property.java
+/Users/akan/Desktop/demo/com.bosch.lite.sdv.vehfeature/src/main/java/com/bosch/lite/sdv/vehfeature/service/MqttService.java
+/Users/akan/Desktop/demo/com.bosch.lite.sdv.vehfeature/src/main/java/com/bosch/lite/sdv/vehfeature/bean/TerminateBean.java
+/Users/akan/Desktop/demo/com.bosch.lite.sdv.vehfeature/src/main/java/com/bosch/lite/sdv/vehfeature/service/rest/FeatureController.java
