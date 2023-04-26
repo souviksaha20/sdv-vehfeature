@@ -118,7 +118,7 @@ featureApp.controller('FeatureController', function($window, $rootScope, $timeou
 	
 	function initSocket(host,port){
 		function connect() {
-			var prefix = "ws://"+host+":"+port+"/";
+			var prefix = "wss://"+host+":"+port+"/";
 			ws = new WebSocket(prefix + "featureSocket");
 			ws.onmessage = function(data){
 				console.log("Got websocket message");

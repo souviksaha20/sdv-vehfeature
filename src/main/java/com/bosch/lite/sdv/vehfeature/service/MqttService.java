@@ -5,7 +5,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.socket.TextMessage;
@@ -24,6 +25,7 @@ import software.amazon.awssdk.iot.AwsIotMqttConnectionBuilder;
 public class MqttService {
 	
 	MqttClientConnection connection;
+	Logger logger = LoggerFactory.getLogger(MqttService.class);
 	
 	private static final String ENDPOINT = "aia19hth4m2a-ats.iot.eu-central-1.amazonaws.com";
 	private static final String TOPIC = "sdvlite/live/command";
@@ -39,7 +41,7 @@ public class MqttService {
 	@Autowired
     public void setSocketHandler(SocketHandler socketHandler) {
         this.socketHandler = socketHandler;
-        System.out.println("setter based dependency injection for socketHandler");
+        logger.info("setter based dependency injection for socketHandler");
     }
 	
 	@SuppressWarnings("unused")
@@ -62,9 +64,9 @@ public class MqttService {
 		this.setInputCertPath();
 		this.setInputKeyPath();
 		this.setProxy();
-		System.out.println("CA Cert Path = "+this.caCertPath);
-		System.out.println("Input Cert Path = "+this.inputCertPath);
-		System.out.println("Input Key Path = "+this.inputKeyPath);
+		logger.info("CA Cert Path = "+this.caCertPath);
+		logger.info("Input Cert Path = "+this.inputCertPath);
+		logger.info("Input Key Path = "+this.inputKeyPath);
 	}
 
 	private void setCaCertPath() {
@@ -110,15 +112,15 @@ public class MqttService {
 	
 	public void disconnect() {
 		try {
-			System.out.println(connection);
+			logger.info(" "+connection);
 			connection.disconnect();
 			// Close the connection now that we are completely done with it.
 			connection.close();
-			System.out.println("Connection closed!!");
+			logger.info("Connection closed!!");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		System.out.println("Complete!");
+		logger.info("Complete!");
 	}
 	
 	public boolean isNotConnected() {
@@ -131,13 +133,13 @@ public class MqttService {
 			@Override
 			public void onConnectionInterrupted(int errorCode) {
 				if (errorCode != 0) {
-					System.out.println("Connection interrupted: " + errorCode + ": " + CRT.awsErrorString(errorCode));
+					logger.info("Connection interrupted: " + errorCode + ": " + CRT.awsErrorString(errorCode));
 				}
 			}
 
 			@Override
 			public void onConnectionResumed(boolean sessionPresent) {
-				System.out.println("Connection resumed: " + (sessionPresent ? "existing session" : "clean session"));
+				logger.info("Connection resumed: " + (sessionPresent ? "existing session" : "clean session"));
 			}
 		};
 
@@ -171,7 +173,7 @@ public class MqttService {
 			CompletableFuture<Boolean> connected = connection.connect();
 			try {
 				boolean sessionPresent = connected.get();
-				System.out.println("Connected to " + (!sessionPresent ? "new" : "existing") + " session!");
+				logger.info("Connected to " + (!sessionPresent ? "new" : "existing") + " session!");
 			} catch (Exception ex) {
 				throw new RuntimeException("Exception occurred during connect", ex);
 			}
@@ -181,6 +183,7 @@ public class MqttService {
 					(message) -> {
 						String payload = new String(message.getPayload(), StandardCharsets.UTF_8);
 						try {
+							logger.info("sending the value to websorket");
 							socketHandler.handleTextMessage(null, new TextMessage(payload));
 						} catch (InterruptedException e) {
 							e.printStackTrace();

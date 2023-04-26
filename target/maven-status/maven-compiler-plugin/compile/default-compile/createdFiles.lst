@@ -3,6 +3,10 @@ com/bosch/lite/sdv/vehfeature/bean/TerminateBean.class
 com/bosch/lite/sdv/vehfeature/service/MqttService$1.class
 com/bosch/lite/sdv/vehfeature/websocket/WebSocketConfig.class
 com/bosch/lite/sdv/vehfeature/config/ShutdownConfig.class
+com/bosch/lite/sdv/vehfeature/bean/Payload.class
 com/bosch/lite/sdv/vehfeature/service/rest/FeatureController.class
 com/bosch/lite/sdv/vehfeature/websocket/SocketHandler.class
+com/bosch/lite/sdv/vehfeature/bean/Property.class
+com/bosch/lite/sdv/vehfeature/bean/Headers.class
 com/bosch/lite/sdv/vehfeature/service/MqttService.class
+com/bosch/lite/sdv/vehfeature/bean/Value.class
