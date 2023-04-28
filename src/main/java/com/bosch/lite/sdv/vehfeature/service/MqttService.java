@@ -133,7 +133,11 @@ public class MqttService {
 			@Override
 			public void onConnectionInterrupted(int errorCode) {
 				if (errorCode != 0) {
-					logger.info("Connection interrupted: " + errorCode + ": " + CRT.awsErrorString(errorCode));
+					logger.error("Connection interrupted: " + errorCode + ": " + CRT.awsErrorString(errorCode));
+					disconnect();
+					logger.info("Disconected");
+					connect();
+					logger.info("conect");
 				}
 			}
 
@@ -144,15 +148,6 @@ public class MqttService {
 		};
 
 		try {
-
-			/**
-			 * Create the MQTT connection from the builder
-			 */
-//			AwsIotMqttConnectionBuilder builder = AwsIotMqttConnectionBuilder.newMtlsBuilder(getFileAsByteStream("test_fek_03.cert.pem"), getFileAsByteStream("test_fek_03.private.key"));
-			
-//			if (this.caCertPath != "") {
-//				builder.withCertificateAuthorityFromPath(null, this.caCertPath);
-//			}
 			AwsIotMqttConnectionBuilder builder = AwsIotMqttConnectionBuilder.newMtlsBuilder(getFileAsByteStream(this.inputCertPath), getFileAsByteStream(this.inputKeyPath));
 			builder.withConnectionEventCallbacks(callbacks)
             .withClientId(this.CLIENT_ID)
