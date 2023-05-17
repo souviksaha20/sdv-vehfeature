@@ -130,31 +130,30 @@ public class MqttService {
 		return connection == null;
 	}
 	
+   class  CustomMqttEvents implements MqttClientConnectionEvents{
+	   
+	   public  MqttService mqttService;
+	   public CustomMqttEvents(MqttService mqttService) {
+		   this.mqttService=mqttService;
+	   }
 
-	MqttClientConnectionEvents callbacks = new MqttClientConnectionEvents() {
-		@Autowired
-		private ApplicationContext context;
-		
-		@Override
+	   @Override
 		public void onConnectionInterrupted(int errorCode) {
 			if (errorCode != 0) {
 				logger.error("Connection interrupted: " + errorCode + ": " + CRT.awsErrorString(errorCode));
 			}
 		}
 
-		@Override
+	   @Override
 		public void onConnectionResumed(boolean sessionPresent) {
 			logger.info("Connection resumed: " + (sessionPresent ? "existing session" : "clean session"));
-			MqttService mqttService= context.getBean(MqttService.class);
-			if(mqttService==null)
-			{
-				System.out.println("is null");
-			}
-			mqttService.subscribedAws();
+			if(!sessionPresent)
+				this.mqttService.subscribedAws();
 			
 		}
-	 };
-	
+	   
+   }
+	MqttClientConnectionEvents callbacks = new CustomMqttEvents(this); 	
 	
 	public void connect() {
 		
