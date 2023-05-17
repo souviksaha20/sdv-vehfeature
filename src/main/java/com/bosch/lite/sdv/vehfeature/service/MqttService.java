@@ -1,17 +1,20 @@
 package com.bosch.lite.sdv.vehfeature.service;
 
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.web.socket.TextMessage;
 
 import com.bosch.lite.sdv.vehfeature.websocket.SocketHandler;
+import com.google.gson.Gson;
 
 import software.amazon.awssdk.crt.CRT;
 import software.amazon.awssdk.crt.http.HttpProxyOptions;
@@ -23,50 +26,49 @@ import software.amazon.awssdk.iot.AwsIotMqttConnectionBuilder;
 
 @Service
 public class MqttService {
-	
+
 	MqttClientConnection connection;
 	Logger logger = LoggerFactory.getLogger(MqttService.class);
-	
+
 	private static final String ENDPOINT = "aia19hth4m2a-ats.iot.eu-central-1.amazonaws.com";
 	private static final String TOPIC = "sdvlite/live/command";
-	private static final String CLIENT_ID = "test_fek_03_mob_client"; 
+	private static final String CLIENT_ID = "test_fek_03_mob_client";
 	private static final int PORT = 8883;
 	private String caCertPath = null;
 	private String inputCertPath = null;
 	private String inputKeyPath = null;
 	private String proxyHost = null;
 	private int proxyPort = 0;
-	
+
 	private SocketHandler socketHandler;
+
 	@Autowired
-    public void setSocketHandler(SocketHandler socketHandler) {
-        this.socketHandler = socketHandler;
-        logger.info("setter based dependency injection for socketHandler");
-    }
-	
+	public void setSocketHandler(SocketHandler socketHandler) {
+		this.socketHandler = socketHandler;
+		logger.info("setter based dependency injection for socketHandler");
+	}
+
 	@SuppressWarnings("unused")
-	private byte[] getFileAsByteStream(final String file) 
-	{
-		byte filedate[]= {};
+	private byte[] getFileAsByteStream(final String file) {
+		byte filedate[] = {};
 		try {
-			filedate =Thread.currentThread().getContextClassLoader().getResourceAsStream(file).readAllBytes();
+			if(file==null ||file.isEmpty())
+				System.out.println();
+			filedate = Thread.currentThread().getContextClassLoader().getResourceAsStream(file).readAllBytes();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return filedate;
 	}
-	
-	
-	
+
 	public MqttService() {
 		this.setCaCertPath();
 		this.setInputCertPath();
 		this.setInputKeyPath();
 		this.setProxy();
-		logger.info("CA Cert Path = "+this.caCertPath);
-		logger.info("Input Cert Path = "+this.inputCertPath);
-		logger.info("Input Key Path = "+this.inputKeyPath);
+		logger.info("CA Cert Path = " + this.caCertPath);
+		logger.info("Input Key Path = " + this.inputKeyPath);
 	}
 
 	private void setCaCertPath() {
@@ -102,17 +104,18 @@ public class MqttService {
 	}
 
 	static void onApplicationFailure(Throwable cause) {
-		System.out.println("Exception encountered: " + cause.toString());
+		System.out.println("Throwable Exception encountered: " + cause.toString());
 	}
-	
+
 	public void publish(final String message) {
-		
+
 		connection.publish(new MqttMessage(TOPIC, message.getBytes(), QualityOfService.AT_LEAST_ONCE, false));
+		logger.info("message send to AWS");
 	}
-	
+
 	public void disconnect() {
 		try {
-			logger.info(" "+connection);
+			logger.info(" " + connection);
 			connection.disconnect();
 			// Close the connection now that we are completely done with it.
 			connection.close();
@@ -122,31 +125,39 @@ public class MqttService {
 		}
 		logger.info("Complete!");
 	}
-	
+
 	public boolean isNotConnected() {
 		return connection == null;
 	}
+	
 
+	MqttClientConnectionEvents callbacks = new MqttClientConnectionEvents() {
+		@Autowired
+		private ApplicationContext context;
+		
+		@Override
+		public void onConnectionInterrupted(int errorCode) {
+			if (errorCode != 0) {
+				logger.error("Connection interrupted: " + errorCode + ": " + CRT.awsErrorString(errorCode));
+			}
+		}
+
+		@Override
+		public void onConnectionResumed(boolean sessionPresent) {
+			logger.info("Connection resumed: " + (sessionPresent ? "existing session" : "clean session"));
+			MqttService mqttService= context.getBean(MqttService.class);
+			if(mqttService==null)
+			{
+				System.out.println("is null");
+			}
+			mqttService.subscribedAws();
+			
+		}
+	 };
+	
+	
 	public void connect() {
-
-		MqttClientConnectionEvents callbacks = new MqttClientConnectionEvents() {
-			@Override
-			public void onConnectionInterrupted(int errorCode) {
-				if (errorCode != 0) {
-					logger.error("Connection interrupted: " + errorCode + ": " + CRT.awsErrorString(errorCode));
-					disconnect();
-					logger.info("Disconected");
-					connect();
-					logger.info("conect");
-				}
-			}
-
-			@Override
-			public void onConnectionResumed(boolean sessionPresent) {
-				logger.info("Connection resumed: " + (sessionPresent ? "existing session" : "clean session"));
-			}
-		};
-
+		
 		try {
 			AwsIotMqttConnectionBuilder builder = AwsIotMqttConnectionBuilder.newMtlsBuilder(getFileAsByteStream(this.inputCertPath), getFileAsByteStream(this.inputKeyPath));
 			builder.withConnectionEventCallbacks(callbacks)
@@ -154,7 +165,7 @@ public class MqttService {
             .withEndpoint(this.ENDPOINT)
             .withPort((short)this.PORT)
             .withCleanSession(true)
-            .withProtocolOperationTimeoutMs(60000);
+            .withKeepAliveSecs(8640);
 			if (this.proxyHost != "" && this.proxyPort > 0) {
 				HttpProxyOptions proxyOptions = new HttpProxyOptions();
 				proxyOptions.setHost(this.proxyHost);
@@ -165,31 +176,52 @@ public class MqttService {
 			builder.close();
 
 			// Connect the MQTT client
+
 			CompletableFuture<Boolean> connected = connection.connect();
 			try {
 				boolean sessionPresent = connected.get();
-				logger.info("Connected to " + (!sessionPresent ? "new" : "existing") + " session!");
+				logger.info("i Connected to " + (!sessionPresent ? "new" : "existing") + " session!");
 			} catch (Exception ex) {
+				logger.info("error mqtt aws "+ex);
 				throw new RuntimeException("Exception occurred during connect", ex);
 			}
+			
+			subscribedAws();
 
-			// Subscribe to the topic
+		} catch (Exception ex) {
+			onApplicationFailure(ex);
+		}
+	}
+
+	public String message(String message) {
+		Gson gson = new Gson();
+		Map data = gson.fromJson(message, Map.class);
+		String deviceId = data.get("topic").toString().split("/")[1];
+		Map send = (Map) data.get("value");
+		send.put("deviceId", deviceId);
+		return gson.toJson(send);
+	}
+	public void subscribedAws()
+	{
+		// Subscribe to the topic
+		try {
 			CompletableFuture<Integer> subscribed = connection.subscribe(TOPIC, QualityOfService.AT_LEAST_ONCE,
 					(message) -> {
 						String payload = new String(message.getPayload(), StandardCharsets.UTF_8);
 						try {
 							logger.info("sending the value to websorket");
-							socketHandler.handleTextMessage(null, new TextMessage(payload));
+							socketHandler.handleTextMessage(null, new TextMessage(message(payload)));
 						} catch (InterruptedException e) {
-							e.printStackTrace();
-						} catch (IOException e) {
-							e.printStackTrace();
+							logger.error("Subscribe " + e);
+						} catch (Exception e) {
+							logger.error("Subscribe IOException " + e);
 						}
 					});
 			subscribed.get();
-
-		} catch (Exception ex) {
-			onApplicationFailure(ex);
+			System.out.println("conected");
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 }

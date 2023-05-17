@@ -20,12 +20,12 @@ public class SocketHandler extends TextWebSocketHandler {
 	static List<WebSocketSession> sessions = new CopyOnWriteArrayList<>();
 
 	@Override
-	
 	public void handleTextMessage(WebSocketSession session, TextMessage message)
 			throws InterruptedException, IOException {
 		logger.info("Reached handleTextMessage");
 		logger.info("session size "+sessions.size());
 		for(WebSocketSession webSocketSession : sessions) {
+			
 			webSocketSession.sendMessage(message);
 			logger.info("messend send to web sorket :" +message);
 		}
@@ -42,7 +42,6 @@ public class SocketHandler extends TextWebSocketHandler {
 	@Override
 	public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
 		super.afterConnectionClosed(session, status);
-		System.out.println("Reached afterConnectionClosed");
 		sessions.remove(session);
 	}
 }
