@@ -17,10 +17,10 @@ public class TerminateBean {
         }
     }
 
-    @PreDestroy
-    public void onDestroy() throws Exception {
-    	System.out.println("1.Spring Container is destroyed!");
-        mqttService.disconnect();
-        System.out.println("2.Spring Container is destroyed!");
-    }
+//    @PreDestroy
+//    public void onDestroy() throws Exception {
+//    	System.out.println("1.Spring Container is destroyed!");
+//        mqttService.disconnect();
+//        System.out.println("2.Spring Container is destroyed!");
+//    }
 }

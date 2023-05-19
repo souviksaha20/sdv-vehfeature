@@ -160,9 +160,7 @@ public class MqttService {
 			if(!sessionPresent)
 			{
 				
-//				this.mqttService.connect();
 				this.mqttService.subscribedAws(false);
-				logger.error("conected");
 			}
 				
 			
@@ -186,19 +184,18 @@ public class MqttService {
 				proxyOptions.setPort(this.proxyPort);
 				builder.withHttpProxyOptions(proxyOptions);
 			}
-			connection = this.builder.build();
+			this.connection = this.builder.build();
 			
 
 			// Connect the MQTT client
 			
-			CompletableFuture<Boolean> connected = connection.connect();
+			CompletableFuture<Boolean> connected = this.connection.connect();
 			try {
 				 sessionPresent = connected.get();
 				logger.info("i Connected to " + (!sessionPresent ? "new" : "existing") + " session!"+ sessionPresent);
 			} catch (Exception ex) {
 				logger.info("error mqtt aws "+ex);
-				connection.disconnect();
-				connection.close();
+				this.connection.disconnect();
 				connect();
 				try {
 					sessionPresent = connected.get();
@@ -229,13 +226,12 @@ public class MqttService {
 		if(data==false)
 		{
 			logger.info("error mqtt aws "+data);
-			connection.disconnect();
-			connection.close();
-			connect();
+			this.connection.disconnect();
+			this.connect();
 		}
 		// Subscribe to the topic
 		try {
-			CompletableFuture<Integer> subscribed = connection.subscribe(TOPIC, QualityOfService.AT_LEAST_ONCE,
+			CompletableFuture<Integer> subscribed = this.connection.subscribe(TOPIC, QualityOfService.AT_LEAST_ONCE,
 					(message) -> {
 						String payload = new String(message.getPayload(), StandardCharsets.UTF_8);
 						try {
@@ -248,7 +244,7 @@ public class MqttService {
 						}
 					});
 			subscribed.get();
-			System.out.println("conected");
+			logger.info("Subscribed to the topic is done");
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
