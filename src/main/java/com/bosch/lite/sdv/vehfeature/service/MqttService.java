@@ -226,7 +226,7 @@ public class MqttService {
 	}
 	public void subscribedAws(boolean data)
 	{
-		if(!data)
+		if(data==false)
 		{
 			logger.info("error mqtt aws "+data);
 			connection.disconnect();
