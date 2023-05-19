@@ -1,6 +1,7 @@
 package com.bosch.lite.sdv.vehfeature.service;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -27,7 +28,7 @@ import software.amazon.awssdk.iot.AwsIotMqttConnectionBuilder;
 @Service
 public class MqttService {
 
-	MqttClientConnection connection;
+	public MqttClientConnection connection;
 	Logger logger = LoggerFactory.getLogger(MqttService.class);
 
 	private static final String ENDPOINT = "aia19hth4m2a-ats.iot.eu-central-1.amazonaws.com";
@@ -39,6 +40,8 @@ public class MqttService {
 	private String inputKeyPath = null;
 	private String proxyHost = null;
 	private int proxyPort = 0;
+	public AwsIotMqttConnectionBuilder builder;
+	public boolean sessionPresent=false;
 
 	private SocketHandler socketHandler;
 
@@ -53,7 +56,7 @@ public class MqttService {
 		byte filedate[] = {};
 		try {
 			if(file==null ||file.isEmpty())
-				System.out.println();
+				System.out.println("it is emty");
 			filedate = Thread.currentThread().getContextClassLoader().getResourceAsStream(file).readAllBytes();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -69,6 +72,12 @@ public class MqttService {
 		this.setProxy();
 		logger.info("CA Cert Path = " + this.caCertPath);
 		logger.info("Input Key Path = " + this.inputKeyPath);
+		try {
+			this.builder=AwsIotMqttConnectionBuilder.newMtlsBuilder(getFileAsByteStream(this.inputCertPath), getFileAsByteStream(this.inputKeyPath));
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	private void setCaCertPath() {
@@ -119,6 +128,7 @@ public class MqttService {
 			connection.disconnect();
 			// Close the connection now that we are completely done with it.
 			connection.close();
+			this.builder.close();
 			logger.info("Connection closed!!");
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -148,7 +158,13 @@ public class MqttService {
 		public void onConnectionResumed(boolean sessionPresent) {
 			logger.info("Connection resumed: " + (sessionPresent ? "existing session" : "clean session"));
 			if(!sessionPresent)
-				this.mqttService.subscribedAws();
+			{
+				
+//				this.mqttService.connect();
+				this.mqttService.subscribedAws(false);
+				logger.error("conected");
+			}
+				
 			
 		}
 	   
@@ -158,8 +174,7 @@ public class MqttService {
 	public void connect() {
 		
 		try {
-			AwsIotMqttConnectionBuilder builder = AwsIotMqttConnectionBuilder.newMtlsBuilder(getFileAsByteStream(this.inputCertPath), getFileAsByteStream(this.inputKeyPath));
-			builder.withConnectionEventCallbacks(callbacks)
+			this.builder.withConnectionEventCallbacks(callbacks)
             .withClientId(this.CLIENT_ID)
             .withEndpoint(this.ENDPOINT)
             .withPort((short)this.PORT)
@@ -171,21 +186,30 @@ public class MqttService {
 				proxyOptions.setPort(this.proxyPort);
 				builder.withHttpProxyOptions(proxyOptions);
 			}
-			connection = builder.build();
-			builder.close();
+			connection = this.builder.build();
+			
 
 			// Connect the MQTT client
-
+			
 			CompletableFuture<Boolean> connected = connection.connect();
 			try {
-				boolean sessionPresent = connected.get();
-				logger.info("i Connected to " + (!sessionPresent ? "new" : "existing") + " session!");
+				 sessionPresent = connected.get();
+				logger.info("i Connected to " + (!sessionPresent ? "new" : "existing") + " session!"+ sessionPresent);
 			} catch (Exception ex) {
 				logger.info("error mqtt aws "+ex);
-				throw new RuntimeException("Exception occurred during connect", ex);
+				connection.disconnect();
+				connection.close();
+				connect();
+				try {
+					sessionPresent = connected.get();
+				} catch (InterruptedException | ExecutionException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					return ;
+				}
 			}
 			
-			subscribedAws();
+			subscribedAws(true);
 
 		} catch (Exception ex) {
 			onApplicationFailure(ex);
@@ -200,15 +224,22 @@ public class MqttService {
 		send.put("deviceId", deviceId);
 		return gson.toJson(send);
 	}
-	public void subscribedAws()
+	public void subscribedAws(boolean data)
 	{
+		if(!data)
+		{
+			logger.info("error mqtt aws "+data);
+			connection.disconnect();
+			connection.close();
+			connect();
+		}
 		// Subscribe to the topic
 		try {
 			CompletableFuture<Integer> subscribed = connection.subscribe(TOPIC, QualityOfService.AT_LEAST_ONCE,
 					(message) -> {
 						String payload = new String(message.getPayload(), StandardCharsets.UTF_8);
 						try {
-							logger.info("sending the value to websorket");
+							logger.info("sending the value to websorket"+payload);
 							socketHandler.handleTextMessage(null, new TextMessage(message(payload)));
 						} catch (InterruptedException e) {
 							logger.error("Subscribe " + e);
