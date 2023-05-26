@@ -108,8 +108,8 @@ public class MqttService {
 	public void disconnect() {
 		try {
 			CompletableFuture<Void> disconnected = this.connection.disconnect();
-			disconnected.get(1,TimeUnit.SECONDS);
-			
+//			disconnected.get(1,TimeUnit.SECONDS);
+			this.connection.close();
 		} catch (Exception e) {
 			logger.info("Error from disconnected");
 		}
@@ -164,8 +164,8 @@ public class MqttService {
 
 		} catch (UnsupportedEncodingException | InterruptedException | ExecutionException | TimeoutException e) {
 			// TODO Auto-generated catch block
-			logger.error("in conection trying to cone conect "+e);
-			reConnect();
+			logger.error("in conection trying to cone conect  so retrying");
+			connect();
 		}
 
 	}
