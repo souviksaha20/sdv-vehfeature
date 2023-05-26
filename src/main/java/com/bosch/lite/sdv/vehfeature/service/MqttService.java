@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -157,11 +158,11 @@ public class MqttService {
 
 			CompletableFuture<Boolean> connected = this.connection.connect();
 			boolean sessionPresent;
-			sessionPresent = connected.get();
+			sessionPresent = connected.get(1,TimeUnit.SECONDS);
 			logger.info("Connected to " + (!sessionPresent ? "new" : "existing") + " session!");
 			subscribedAws();
 
-		} catch (UnsupportedEncodingException | InterruptedException | ExecutionException e) {
+		} catch (UnsupportedEncodingException | InterruptedException | ExecutionException | TimeoutException e) {
 			// TODO Auto-generated catch block
 			logger.error("in conection trying to cone conect "+e);
 			reConnect();
