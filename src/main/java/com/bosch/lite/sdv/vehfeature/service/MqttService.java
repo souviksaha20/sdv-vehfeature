@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,13 +106,13 @@ public class MqttService {
 
 	public void disconnect() {
 		try {
-			CompletableFuture<Void> disconnected = connection.disconnect();
-			disconnected.get();
-			connection.close();
+			CompletableFuture<Void> disconnected = this.connection.disconnect();
+			disconnected.get(1,TimeUnit.SECONDS);
+			
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.info("Error from disconnected");
 		}
-		logger.info("Complete!");
+		
 	}
 
 	public boolean isNotConnected() {
@@ -135,11 +136,8 @@ public class MqttService {
 
 		@Override
 		public void onConnectionResumed(boolean sessionPresent) {
+			reConnect();
 			logger.info("Connection resumed: " + (sessionPresent ? "existing session" : "clean session"));
-			if (!sessionPresent) {
-				mqttService.disconnect();
-				mqttService.connect();
-			}
 
 		}
 
@@ -166,7 +164,19 @@ public class MqttService {
 		} catch (UnsupportedEncodingException | InterruptedException | ExecutionException e) {
 			// TODO Auto-generated catch block
 			logger.error("in conection trying to cone conect "+e);
-			connect();
+			reConnect();
+		}
+
+	}
+	public void reConnect() {
+		try {
+			subscribedAws();
+			logger.info("Connection resumed with subscribed");
+
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			logger.error("in conection trying to cone conect "+e);
+			reConnect();
 		}
 
 	}
@@ -195,11 +205,11 @@ public class MqttService {
 							logger.error("Subscribe IOException " + e);
 						}
 					});
-			subscribed.get();
+			logger.info(subscribed.get(1,TimeUnit.SECONDS)+ " <------subscribed back");
 			logger.info("Subscribed to the topic is done");
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			disconnect();
+			connect();
 		}
 	}
 }
