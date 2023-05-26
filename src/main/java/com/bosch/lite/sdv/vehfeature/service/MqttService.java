@@ -35,7 +35,7 @@ public class MqttService {
 
 	private static final String ENDPOINT = "aia19hth4m2a-ats.iot.eu-central-1.amazonaws.com";
 	private static final String TOPIC = "sdvlite/live/command";
-	private static final String CLIENT_ID = "test_fek_03_mob_client";
+	private static final String CLIENT_ID = "mob_client_Mobile";
 	private static final int PORT = 8883;
 	private byte[] caCertPath = null;
 	private byte[] inputCertPath = null;
@@ -73,7 +73,7 @@ public class MqttService {
 	private void setInputCertPath() {
 		try {
 			this.inputCertPath = Thread.currentThread().getContextClassLoader()
-					.getResourceAsStream("test_fek_03.cert.pem").readAllBytes();
+					.getResourceAsStream("c128cc83ead1519b73b8f503af37debbd1fa60b44d35c90162283ef6543c4450-certificate.pem.crt").readAllBytes();
 		} catch (Exception e) {
 			this.inputCertPath = null;
 			e.printStackTrace();
@@ -83,7 +83,7 @@ public class MqttService {
 	private void setInputKeyPath() {
 		try {
 			this.inputKeyPath = Thread.currentThread().getContextClassLoader()
-					.getResourceAsStream("test_fek_03.private.key").readAllBytes();
+					.getResourceAsStream("c128cc83ead1519b73b8f503af37debbd1fa60b44d35c90162283ef6543c4450-private.pem.key").readAllBytes();
 		} catch (Exception e) {
 			this.inputKeyPath = null;
 			e.printStackTrace();
