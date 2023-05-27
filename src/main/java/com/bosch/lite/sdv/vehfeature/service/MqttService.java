@@ -34,7 +34,7 @@ public class MqttService
 	private byte[] inputKeyPath = null;
 	private static final String ENDPOINT = "aia19hth4m2a-ats.iot.eu-central-1.amazonaws.com";
 	private static final String TOPIC = "sdvlite/live/command";
-	private static final String CLIENT_ID = "test_fek_03_mob_client";
+	private static final String CLIENT_ID = "mob_client_ios";
 	private static final int PORT = 8883;
 	private SocketHandler socketHandler;
 	
@@ -67,7 +67,7 @@ public class MqttService
 	private void setInputCertPath() {
 		try {
 			this.inputCertPath = Thread.currentThread().getContextClassLoader()
-					.getResourceAsStream("test_fek_03.cert.pem").readAllBytes();
+					.getResourceAsStream("c128cc83ead1519b73b8f503af37debbd1fa60b44d35c90162283ef6543c4450-certificate.pem.crt").readAllBytes();
 		} catch (Exception e) {
 			this.inputCertPath = null;
 			e.printStackTrace();
@@ -77,7 +77,7 @@ public class MqttService
 	private void setInputKeyPath() {
 		try {
 			this.inputKeyPath = Thread.currentThread().getContextClassLoader()
-					.getResourceAsStream("test_fek_03.private.key").readAllBytes();
+					.getResourceAsStream("c128cc83ead1519b73b8f503af37debbd1fa60b44d35c90162283ef6543c4450-private.pem.key").readAllBytes();
 		} catch (Exception e) {
 			this.inputKeyPath = null;
 			e.printStackTrace();
@@ -86,10 +86,10 @@ public class MqttService
 	
 	class CustomMqttEvents implements MqttClientConnectionEvents {
 
-		public MqttService mqttService;
+		public MqttService publishToAws;
 
-		public CustomMqttEvents(MqttService mqttService) {
-			this.mqttService = mqttService;
+		public CustomMqttEvents(MqttService publishToAws) {
+			this.publishToAws = publishToAws;
 		}
 
 		@Override
@@ -101,6 +101,14 @@ public class MqttService
 
 		@Override
 		public void onConnectionResumed(boolean sessionPresent) {
+			CompletableFuture<Integer> unsubscribe =this.publishToAws.connection.unsubscribe(TOPIC);
+			try {
+				unsubscribe.get(60, TimeUnit.SECONDS);
+			}catch (InterruptedException | ExecutionException  | TimeoutException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			this.publishToAws.subscribeToAws();
 			logger.info("Connection resumed for PublishToAws : " + (sessionPresent ? "existing session" : "clean session"));
 
 		}
@@ -122,23 +130,32 @@ public class MqttService
 			 boolean sessionPresent = connected.get(60,TimeUnit.SECONDS);
 			 logger.info("Connected to " + (!sessionPresent ? "new" : "existing") + " session!");
 			 // Subscribe to the topic
-	          CompletableFuture<Integer> subscribed = connection.subscribe(TOPIC, QualityOfService.AT_LEAST_ONCE, (message) -> {
-	                String payload = new String(message.getPayload(), StandardCharsets.UTF_8);
-	                try {
-						socketHandler.handleTextMessage(null, new TextMessage(message(payload)));
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-	            });
-	            subscribed.get(60,TimeUnit.SECONDS);
+			 subscribeToAws();
 	} catch (InterruptedException | ExecutionException | UnsupportedEncodingException | TimeoutException e) {
 		// TODO Auto-generated catch block
 		e.printStackTrace();
 	}
+   }
+   
+   public void subscribeToAws() {
+	   try {
+	   CompletableFuture<Integer> subscribed = connection.subscribe(TOPIC, QualityOfService.AT_LEAST_ONCE, (message) -> {
+           String payload = new String(message.getPayload(), StandardCharsets.UTF_8);
+           try {
+				socketHandler.handleTextMessage(null, new TextMessage(message(payload)));
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+       });
+       subscribed.get(60,TimeUnit.SECONDS);
+	   } catch (InterruptedException | ExecutionException  | TimeoutException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
    }
 	
    public boolean publishToAws(final String message) 
@@ -181,5 +198,5 @@ public class MqttService
 		Map send = (Map) data.get("value");
 		send.put("deviceId", deviceId);
 		return gson.toJson(send);
-	}
-}
+   }
+ }
