@@ -1,4 +1,4 @@
 com/bosch/lite/sdv/vehfeature/bean/Payload.class
 com/bosch/lite/sdv/vehfeature/bean/Property.class
-com/bosch/lite/sdv/vehfeature/bean/Headers.class
 com/bosch/lite/sdv/vehfeature/bean/Value.class
+com/bosch/lite/sdv/vehfeature/bean/Headers.class

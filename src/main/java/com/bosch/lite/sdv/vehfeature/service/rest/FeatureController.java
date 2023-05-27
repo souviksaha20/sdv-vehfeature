@@ -1,5 +1,7 @@
 package com.bosch.lite.sdv.vehfeature.service.rest;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +18,7 @@ import com.google.gson.Gson;
 @RestController
 public class FeatureController {
 	
-	
+	Logger logger = LoggerFactory.getLogger(FeatureController.class);
 	@Autowired
 	private MqttService mqttService;
 	
@@ -24,7 +26,9 @@ public class FeatureController {
 	public ResponseEntity<String> sendFeatureMessage(@RequestBody Payload payload) {
 		try {
 			 String data=new Gson().toJson(payload);
-			mqttService.publish(data.toString());
+			if(mqttService.publishToAws(data.toString()))
+				logger.info("data Published Success");
+			
 			return ResponseEntity.status(HttpStatus.OK).body("message send");
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -32,31 +36,6 @@ public class FeatureController {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("message failed");
 		}
 	}
-	
-//	@PostMapping("/doorlock")
-//	public String doorlock(@RequestBody DoorLockBean doorLock) {
-//		JSONObject returnObj = new JSONObject();
-//		returnObj.put("result", "Success");
-//		System.out.println(doorLock.getValue());
-//		System.out.println(doorLock.getDeviceid());
-//		System.out.println(doorLock.getFeatureid());
-//		System.out.println(doorLock.getEnvironment());
-//		JSONObject payload = new JSONObject();
-//		JSONObject headers = new JSONObject();
-//		JSONObject value = new JSONObject();
-//		payload.put("topic", doorLock.getNamespace()+"/"+CLIENTIDENTIFIER+"/things/live/messages/featureMessage");
-//		headers.put("target", doorLock.getDeviceid());
-//		payload.put("headers", headers);
-//		payload.put("path", "");
-//		value.put("featureId", doorLock.getFeatureid());
-//		JSONObject temp = new JSONObject();
-//		temp.put("signal", doorLock.getSignal());
-//		temp.put("value", doorLock.getValue());
-//		value.put("payload", temp.toString());
-//		payload.put("value", value);
-//		mqttService.publish(payload.toString());
-//		return returnObj.toString();
-//	}
 	
 	
 }
