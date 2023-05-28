@@ -102,13 +102,7 @@ public class MqttService
 		@Override
 		public void onConnectionResumed(boolean sessionPresent) {
 			CompletableFuture<Integer> unsubscribe =this.publishToAws.connection.unsubscribe(TOPIC);
-			try {
-				unsubscribe.get(60, TimeUnit.SECONDS);
-			}catch (InterruptedException | ExecutionException  | TimeoutException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			this.publishToAws.subscribeToAws();
+			this.publishToAws.disconnect();
 			logger.info("Connection resumed for PublishToAws : " + (sessionPresent ? "existing session" : "clean session"));
 
 		}
