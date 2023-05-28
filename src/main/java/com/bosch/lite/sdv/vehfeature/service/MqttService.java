@@ -101,8 +101,8 @@ public class MqttService
 
 		@Override
 		public void onConnectionResumed(boolean sessionPresent) {
-			CompletableFuture<Integer> unsubscribe =this.publishToAws.connection.unsubscribe(TOPIC);
-			this.publishToAws.disconnect();
+			this.publishToAws.disconnectToAws();
+			this.publishToAws.connectToAws();
 			logger.info("Connection resumed for PublishToAws : " + (sessionPresent ? "existing session" : "clean session"));
 
 		}
@@ -117,10 +117,10 @@ public class MqttService
 		   AwsIotMqttConnectionBuilder builder;
 		   builder = AwsIotMqttConnectionBuilder.newMtlsBuilder(inputCertPath, inputKeyPath);
 			builder.withConnectionEventCallbacks(callbacks).withClientId(this.CLIENT_ID).withEndpoint(this.ENDPOINT)
-					.withPort((short) this.PORT).withCleanSession(true).withProtocolOperationTimeoutMs(60000);
+					.withPort((short) this.PORT).withCleanSession(false).withProtocolOperationTimeoutMs(60000);
 			 this.connection = builder.build();
 			 builder.close();
-			 CompletableFuture<Boolean> connected = connection.connect();
+			 CompletableFuture<Boolean> connected = this.connection.connect();
 			 boolean sessionPresent = connected.get(60,TimeUnit.SECONDS);
 			 logger.info("Connected to " + (!sessionPresent ? "new" : "existing") + " session!");
 			 // Subscribe to the topic
@@ -133,7 +133,7 @@ public class MqttService
    
    public void subscribeToAws() {
 	   try {
-	   CompletableFuture<Integer> subscribed = connection.subscribe(TOPIC, QualityOfService.AT_LEAST_ONCE, (message) -> {
+	   CompletableFuture<Integer> subscribed = this.connection.subscribe(TOPIC, QualityOfService.AT_LEAST_ONCE, (message) -> {
            String payload = new String(message.getPayload(), StandardCharsets.UTF_8);
            try {
 				socketHandler.handleTextMessage(null, new TextMessage(message(payload)));
@@ -167,19 +167,18 @@ public class MqttService
 	}
 	  
    } 
-   public void disconnect() 
+   public void disconnectToAws() 
    {
 	 try {
 		 logger.info("disconnect is called for PublishToAws ");
 		 
-		 CompletableFuture<Void> disconnected = this.connection.disconnect();
-         disconnected.get(60,TimeUnit.SECONDS);
+		 this.connection.disconnect();
 
          // Close the connection now that we are completely done with it.
          this.connection.close();
          logger.info("disconnect  for PublishToAws success");
 		
-	} catch (InterruptedException | ExecutionException | TimeoutException e) {
+	} catch (Exception e) {
 		// TODO Auto-generated catch block
 		e.printStackTrace();
 	}
