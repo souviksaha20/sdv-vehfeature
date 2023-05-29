@@ -34,7 +34,7 @@ public class MqttService
 	private byte[] inputKeyPath = null;
 	private static final String ENDPOINT = "aia19hth4m2a-ats.iot.eu-central-1.amazonaws.com";
 	private static final String TOPIC = "sdvlite/live/command";
-	private static final String CLIENT_ID = "mob_client_ios";
+	private static final String CLIENT_ID = "mob_client_iostest";
 	private static final int PORT = 8883;
 	private SocketHandler socketHandler;
 	
@@ -128,6 +128,7 @@ public class MqttService
 	} catch (InterruptedException | ExecutionException | UnsupportedEncodingException | TimeoutException e) {
 		// TODO Auto-generated catch block
 		e.printStackTrace();
+		subscribeToAws();
 	}
    }
    
